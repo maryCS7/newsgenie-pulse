@@ -1,12 +1,7 @@
-from dotenv import load_dotenv
-from openai import OpenAI
+from openai_client import ask_openai
 import streamlit as st
-import os
 
-api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
 
-news_api_key = os.getenv("NEWS_API_KEY")
 
 # title
 st.set_page_config(page_title="NewsGenie Pulse", layout="wide")
@@ -33,23 +28,11 @@ if st.button("Get Response"):
         st.warning("Please enter a question or topic.")
     else:
         with st.spinner("Generating response..."):
-            # message adds context for tone/length
-            messages = [
-                {"role": "system", "content": f"You're an empathetic assistant that tailors responses to the user's selected mode: '{digest_mode}'."},
-                {"role": "user", "content": user_query}
-            ]
-
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=messages,
-                    temperature=0.5,
-                )
-                response_content = response.choices[0].message.content.strip()
-                st.success(response_content)
-
-            except Exception as e:
-                st.error(f"OpenAI API error: {e}")
+            answer = ask_openai(user_query, digest_mode)
+            if answer.startswith("OpenAI API error:"):
+                st.error(answer)
+            else:
+                st.success(answer)
 
 
 
