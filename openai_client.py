@@ -6,10 +6,16 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def ask_openai(query: str, digest_mode: str) -> str:
+def ask_openai(query: str, digest_mode: str, time_of_day: str = None, tone: str = None) -> str:
+    system_prompt = f"Respond in tone and length suitable for mode '{digest_mode}'."
+    if tone and tone != "Default":
+        system_prompt += f" Use a {tone.lower()} tone."
+    if time_of_day:
+        system_prompt += f" It's currently {time_of_day.lower()} — adjust the tone or energy accordingly."
+
     messages = [
-        {"role": "system", "content": f"Respond in tone and length suitable for mode '{digest_mode}'."},
-        {"role": "user", "content": query}
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": query}
     ]
     try:
         response = client.chat.completions.create(
