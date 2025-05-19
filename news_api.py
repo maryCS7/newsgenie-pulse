@@ -38,15 +38,8 @@ def get_news(category=None, query=None, country=None, page_size=5):
         if not articles:
             return "No news articles found for your query."
 
-        news_summaries = []
-        for article in articles:
-            title = article.get("title", "No title")
-            description = article.get("description", "")
-            url = article.get("url", "")
-            news_summaries.append(f"**{title}**\n{description}\n[Read more]({url})\n")
-
-        return "\n\n".join(news_summaries)
+        # raw list of articles for later processing
+        return articles
 
     except Exception as e:
         return f"🚨 Failed to fetch news: {e}"
-
