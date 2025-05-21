@@ -1,5 +1,21 @@
 import streamlit as st
+import json
+import ast
 from router_agent import route_query
+
+def parse_article(article):
+    """Converts article to dict if it's a JSON or Python string."""
+    if isinstance(article, dict):
+        return article
+    if isinstance(article, str):
+        try:
+            return json.loads(article)
+        except json.JSONDecodeError:
+            try:
+                return ast.literal_eval(article)
+            except Exception:
+                return None
+    return None
 
 st.set_page_config(page_title="NewsGenie Pulse", layout="wide")
 st.title("🧠 NewsGenie Pulse")
@@ -69,18 +85,35 @@ if user_query.strip():
             time_of_day=time_of_day,
             tone=tone
         )
-        print("Result from route_query:", result)
 
-        summary, articles, system_prompt = result
+        print("🔍 RAW RESULT:", result)
+        print("TYPE OF RESULT:", type(result))
+        print("LENGTH OF RESULT:", len(result))
 
-        print("System prompt sent to OpenAI:")
-        print(system_prompt)
+        if not isinstance(result, (list, tuple)) or len(result) != 4:
+            st.error(f"❌ route_query() returned unexpected format: {result}")
+            st.stop()
 
-        st.markdown(summary)
-
+        summary, articles, system_prompt, metadata = result
+        print("SUMMARY RETURNED in APP:", summary)
+        print("SUMMARY TYPE", type(summary))
+        if isinstance(summary, tuple):
+            summary = summary[0]
+        
+        st.markdown(summary.replace('\\n', '\n').strip())
 
     if articles:
         with st.expander("📰 View Source Articles"):
-            for a in articles:
-                st.markdown(f"**[{a['title']}]({a['url']})**\n\n{a['description']}")
+            for i, raw_article in enumerate(articles):
+                article = parse_article(raw_article)
+                if isinstance(article, dict) and all(k in article for k in ("title", "url", "description")):
+                    st.markdown(f"**[{article['title']}]({article['url']})**\n\n{article['description']}")
+                else:
+                    st.warning(f"⚠️ Skipping malformed article at index {i}")
+                    st.code(raw_article)
+    else:
+        st.info("No articles available.")
+
+
+
 
